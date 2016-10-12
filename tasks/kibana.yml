@@ -1,19 +1,18 @@
 ---
-- name: Kibana archive available
-  get_url:
-    dest=/opt
-    url=https://download.elastic.co/kibana/kibana/kibana-{{ elk_kibana.version }}.tar.gz
-    owner={{ elk_nginx.user }} group={{ elk_nginx.user }}
+- name: Kibana apt repo
+  apt_repository:
+    repo="deb http://packages.elastic.co/kibana/{{ elk_kibana.version }}/{{ ansible_os_family|lower }} stable main"
+    update_cache=yes
+  when: ansible_os_family == 'Debian'
   sudo: yes
-  register: new_archive_downloaded
 
-- name: Kibana archive uncompressed
-  unarchive:
-    src=/opt/kibana-{{ elk_kibana.version }}.tar.gz
-    dest=/opt copy=no
-    owner={{ elk_nginx.user }} group={{ elk_nginx.user }}
+- name: Install kibana apt packages
+  apt: pkg={{ item }} update_cache=yes state=present
+  with_items:
+   - kibana
   sudo: yes
-  when: new_archive_downloaded|changed
+  when: ansible_os_family == 'Debian'
+  notify: Restart logstash
 
 - name: Uncompressed Kibana linked to path
   file:
